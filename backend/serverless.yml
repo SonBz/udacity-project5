@@ -1,7 +1,7 @@
-# TODO: Change the name of the org 
+# FINISH: Change the name of the org 
 org: sonbz
-app: backend-todo
-service: serverless-todo-app
+app: backend-finish
+service: serverless-finish-app
 
 plugins:
   - serverless-webpack
@@ -22,15 +22,15 @@ custom:
     api:
       info:
         version: v1.0.0
-        title: ToDos API
-        description: serverless api for ToDo application
+        title: Finishs API
+        description: serverless api for Finish application
     models:
-      - name: CreateTodo
+      - name: CreateFinish
         contentType: application/json
-        schema: ${file(models/create-todo-model.json)}
-      - name: UpdateTodo
+        schema: ${file(models/create-finish-model.json)}
+      - name: UpdateFinish
         contentType: application/json
-        schema: ${file(models/update-todo-model.json)}
+        schema: ${file(models/update-finish-model.json)}
         
 provider:
   name: aws
@@ -47,9 +47,9 @@ provider:
   # Use these variables in the functions and resouorces section below. For example, 
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET}
   environment:
-    TODOS_TABLE: Todos-${self:provider.stage}
-    TODOS_CREATED_AT_INDEX: CreatedAtIndex
-    TODOS_S3_BUCKET: p4-todo-images-212612323428-${self:provider.stage}
+    FINISH_TABLE: Finishs-${self:provider.stage}
+    FINISH_CREATED_AT_INDEX: CreatedAtIndex
+    FINISH_S3_BUCKET: project5-finish-images-212612323428-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 30000
       
   logs:
@@ -70,14 +70,12 @@ functions:
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
 
-  # TODO: Configure this function - 
-  # Provide iamRoleStatements property for performing Actions on DynamoDB
-  GetTodos:
-    handler: src/lambda/http/getTodos.handler
+  GetFinishs:
+    handler: src/lambda/http/getFinishs.handler
     events:
       - http:
           method: get
-          path: todos
+          path: finishs
           cors: true
           authorizer: Auth
     iamRoleStatementsInherit: true
@@ -90,29 +88,45 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FINISH_TABLE}
+  
+  GetFinishById:
+    handler: src/lambda/http/getFinishById.handler
+    events:
+      - http:
+          method: get
+          path: finishs/{finishId}
+          cors: true
+          authorizer: Auth
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - codedeploy:*
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FINISH_TABLE}
 
-  # TODO: Configure this function - 
-  # Provide iamRoleStatements property. Decide the Actions and AWS Resource. 
-  # To refer to an AWS resource defined in the "Resources" section, you can use "Resource: !GetAtt <resource-name>.Arn"
-  # To validate incoming HTTP requests, we have provided the request schemas in function definition below. 
-  CreateTodo:
-    handler: src/lambda/http/createTodo.handler
+  CreateFinish:
+    handler: src/lambda/http/createFinish.handler
     events:
       - http:
           method: post
-          path: todos
+          path: finishs
           cors: true
           authorizer: Auth
           request:
             schemas:
-              application/json: ${file(models/create-todo-model.json)}
+              application/json: ${file(models/create-finish-model.json)}
           reqValidatorName: RequestBodyValidator
           documentation:
-            summary: Create todo task
-            description: Create a new todo item
+            summary: Create finish task
+            description: Create a new finish item
             requestModels:
-              'application/json': CreateTodo
+              'application/json': CreateFinish
     iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
@@ -124,23 +138,21 @@ functions:
         Action:
           - dynamodb:putItem
         Resource: 
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FINISH_TABLE}
 
-  # TODO: Configure this function
-  # Provide property for setting up CORS, Authorizer, iamRoleStatements, and request schemas
-  UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
+  UpdateFinish:
+    handler: src/lambda/http/updateFinish.handler
     events:
       - http:
           method: patch
-          path: todos/{todoId}
+          path: finishs/{finishId}
           cors: true
           reqValidatorName: RequestBodyValidator
           documentation:
-            summary: update todo task
-            description: update a new todo item
+            summary: update finish task
+            description: update a new finish item
             requestModels:
-              'application/json': UpdateTodo
+              'application/json': UpdateFinish
     iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
@@ -152,16 +164,14 @@ functions:
         Action:
           - dynamodb:updateItem
         Resource: 
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}      
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FINISH_TABLE}      
 
-  # TODO: Configure this function
-  # Provide property for setting up CORS, Authorizer, iamRoleStatements
-  DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
+  DeleteFinish:
+    handler: src/lambda/http/deleteFinish.handler
     events:
       - http:
           method: delete
-          path: todos/{todoId}
+          path: finishs/{finishId}
           cors: true
     iamRoleStatementsInherit: true
     iamRoleStatements:
@@ -169,16 +179,14 @@ functions:
         Action:
           - dynamodb:DeleteItem
         Resource: 
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FINISH_TABLE}
 
-  # TODO: Configure this function
-  # Provide property for setting up CORS, Authorizer, iamRoleStatements
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
     events:
       - http:
           method: post
-          path: todos/{todoId}/attachment
+          path: finishs/{finishId}/attachment
           cors: true
           reqValidatorName: RequestBodyValidator
     iamRoleStatementsInherit: true
@@ -187,12 +195,12 @@ functions:
         Action:
           - s3:PutObject
           - s3:GetObject
-        Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
+        Resource: arn:aws:s3:::${self:provider.environment.FINISH_S3_BUCKET}/*
       - Effect: Allow
         Action:
           - dynamodb:updateItem
         Resource:
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FINISH_TABLE}
       - Effect: Allow
         Action:
           - xray:PutTraceSegments
@@ -201,9 +209,6 @@ functions:
 
 resources:
   Resources:
-    # Add necessary AWS resources. You will need at least the following AWS resources
-    # TODO: Fill the properties
-    # Feel free to change the names as you like. 
     GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:
@@ -223,40 +228,37 @@ resources:
         ValidateRequestBody: true
         ValidateRequestParameters: false
     
-    # TODO: Create a DynamoDB table with local secondary index and a composite key
-    TodosTable:
+    FinishsTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
-          - AttributeName: todoId
+          - AttributeName: finishId
             AttributeType: S
           - AttributeName: createdAt
             AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-          - AttributeName: todoId
+          - AttributeName: finishId
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:provider.environment.TODOS_TABLE}
+        TableName: ${self:provider.environment.FINISH_TABLE}
         LocalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
+          - IndexName: ${self:provider.environment.FINISH_CREATED_AT_INDEX}
             KeySchema:
               - AttributeName: userId
                 KeyType: HASH
               - AttributeName: createdAt
                 KeyType: RANGE
             Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
+              ProjectionType: ALL 
 
-    # TODO: Complete the bucket properties below. 
-    # Do not forget to add the CorsConfiguration propoerty
     AttachmentsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:provider.environment.TODOS_S3_BUCKET}
+        BucketName: ${self:provider.environment.FINISH_S3_BUCKET}
         CorsConfiguration:
           CorsRules:
             - AllowedOrigins:
@@ -271,8 +273,6 @@ resources:
                 - HEAD
               MaxAge: 3000
 
-    # TODO: Complete the policy below and attach it to the bucket defined above
-    # For cross referencing the name of the bucket, use "!Ref AttachmentsBucket"
     BucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
@@ -286,5 +286,5 @@ resources:
               Action: 
                 - s3:GetObject
                 - s3:PutObject
-              Resource: 'arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*'
+              Resource: 'arn:aws:s3:::${self:provider.environment.FINISH_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket

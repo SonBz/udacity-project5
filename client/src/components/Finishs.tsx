@@ -40,8 +40,8 @@ export class Finishs extends React.PureComponent<FinishsProps, FinishsState> {
     this.setState({ newFinishName: event.target.value })
   }
 
-  onEditButtonClick = (finishId: string) => {
-    this.props.history.push(`/finishs/${finishId}/edit`)
+  onEditButtonClick = (finishId: string, name: string, dueDate: string) => {
+    this.props.history.push(`/finishs/${finishId}/${name}/${dueDate}/edit`)
   }
 
   onFinishCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
@@ -178,7 +178,7 @@ export class Finishs extends React.PureComponent<FinishsProps, FinishsState> {
                 <Button
                   icon
                   color="blue"
-                  onClick={() => this.onEditButtonClick(finish.finishId)}
+                  onClick={() => this.onEditButtonClick(finish.finishId, finish.name, finish.dueDate)}
                 >
                   <Icon name="pencil" />
                 </Button>

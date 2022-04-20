@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { Form, Button } from 'semantic-ui-react'
+import { Form, Button, Grid } from 'semantic-ui-react'
 import Auth from '../auth/Auth'
-import { getFinishById, getUploadUrl, patchFinish, uploadFile } from '../api/finishs-api'
+import { getUploadUrl, patchFinish, uploadFile } from '../api/finishs-api'
 import { History } from 'history'
 
 enum UploadState {
@@ -9,12 +9,12 @@ enum UploadState {
   FetchingPresignedUrl,
   UploadingFile,
 }
-
-var finishOb: any;
 interface EditFinishProps {
   match: {
     params: {
-      finishId: string
+      finishId: string,
+      name: string,
+      dueDate: string
     }
   }
   auth: Auth
@@ -33,31 +33,6 @@ export class EditFinish extends React.PureComponent<EditFinishProps,EditFinishSt
     uploadState: UploadState.NoUpload,
     finishName: '',
   }
-  
-  // constructor(props: EditFinishProps | Readonly<EditFinishProps>) {
-  //   super(props);
-  //   try {
-  //     getFinishById(this.props.auth.getIdToken(), this.props.match.params.finishId).then(val =>{
-  //         finishOb = val
-  //         this.setState({
-  //           finishName: finishOb.name
-  //         })
-  //       }
-  //     )
-  //   } catch (e) {
-  //     alert(`Failed to fetch finishs: ${e}`)
-  //   }
-  // }
-  async componentWillMount() {
-    try {
-      finishOb = await getFinishById(this.props.auth.getIdToken(), this.props.match.params.finishId)
-      this.setState({
-        finishName: finishOb.name
-      })
-    } catch (e) {
-      alert(`Failed to fetch finishs: ${e}`)
-    }
-  }
 
   handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -68,7 +43,7 @@ export class EditFinish extends React.PureComponent<EditFinishProps,EditFinishSt
     })
   }
 
-  handleSubmit = async (event: React.SyntheticEvent) => {
+  handleSubmitCreateImage = async (event: React.SyntheticEvent) => {
     event.preventDefault()
     const finishId = this.props.match.params.finishId;
     try {
@@ -77,24 +52,13 @@ export class EditFinish extends React.PureComponent<EditFinishProps,EditFinishSt
         return
       }
 
-      if(!this.state.finishName){
-        alert('Finish name not found')
-        return
-      }
-
       this.setUploadState(UploadState.FetchingPresignedUrl)
-      await patchFinish(this.props.auth.getIdToken(), finishId, {
-        name: this.state.finishName,
-        dueDate: finishOb.dueDate,
-        done: finishOb.done
-      })
       const uploadUrl = await getUploadUrl(this.props.auth.getIdToken(), finishId)
 
       this.setUploadState(this.state.file)
       await uploadFile(uploadUrl, this.state.file)
 
       alert('File was uploaded!')
-      this.props.history.push('/');
     } catch (error) {
       let errorMessage = "Failed to do something exceptional";
       if (error instanceof Error) {
@@ -106,14 +70,35 @@ export class EditFinish extends React.PureComponent<EditFinishProps,EditFinishSt
     }
   }
 
+  handleSubmitUpdate = async (event: React.SyntheticEvent) => {
+    event.preventDefault()
+    const finishId = this.props.match.params.finishId;
+    try {
+      if(!this.state.finishName){
+        alert('Finish name not found')
+        return
+      }
+      await patchFinish(this.props.auth.getIdToken(), finishId, {
+        name: this.state.finishName,
+        dueDate: this.props.match.params.dueDate,
+        done: false
+      })
+      this.props.history.push('/');
+    } catch (error) {
+      let errorMessage = "Failed to do something exceptional";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      alert('error update: '+ errorMessage)
+    }
+  }
+
   handleTaskName = async (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault()
     this.setState({
       finishName: event.target.value
     })
   }
-
-  
 
   setUploadState(uploadState: UploadState) {
     this.setState({
@@ -124,33 +109,48 @@ export class EditFinish extends React.PureComponent<EditFinishProps,EditFinishSt
   render() {
     return (
       <div>
-        <h1>Update image and task name</h1>
-
-        <Form onSubmit={this.handleSubmit}>
-          <Form.Field>
-            <label>Task Name</label>
-            <input
-              placeholder="Enter task name"
-              value={this.state.finishName}
-              onChange={this.handleTaskName}
-            />
-          </Form.Field>
-          <Form.Field>
-            <label>File</label>
-            <input
-              type="file"
-              accept="image/*"
-              placeholder="Image to upload"
-              onChange={this.handleFileChange}
-            />
-          </Form.Field>
-          {this.renderButton()}
-        </Form>
+        <div>
+          <h1>Update task name</h1>
+            <Form onSubmit={this.handleSubmitUpdate}>
+              <Form.Field>
+                <label>Task Name</label>
+                <input
+                  placeholder="Enter task name"
+                  defaultValue={this.props.match.params.name}
+                  onChange={this.handleTaskName}
+                />
+              </Form.Field>
+              <Form.Field>
+                <label>Due date</label>
+                <input
+                  value={this.props.match.params.dueDate}
+                  disabled
+                  style={{fontWeight: 'bold'}}
+                />
+              </Form.Field>
+              {this.renderButtonUpdate()}
+            </Form>
+        </div>
+        <div>
+          <h1>Upload new image</h1>
+            <Form onSubmit={this.handleSubmitCreateImage}>
+              <Form.Field>
+                <label>File</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  placeholder="Image to upload"
+                  onChange={this.handleFileChange}
+                />
+              </Form.Field>
+              {this.renderButtonCreateImg()}
+            </Form>
+        </div>
       </div>
     )
   }
 
-  renderButton() {
+  renderButtonCreateImg() {
 
     return (
       <div>
@@ -160,6 +160,16 @@ export class EditFinish extends React.PureComponent<EditFinishProps,EditFinishSt
           loading={this.state.uploadState !== UploadState.NoUpload}
           type="submit"
         >
+          Upload
+        </Button>
+      </div>
+    )
+  }
+
+  renderButtonUpdate() {
+    return (
+      <div>
+        <Button type="submit" >
           Update
         </Button>
       </div>

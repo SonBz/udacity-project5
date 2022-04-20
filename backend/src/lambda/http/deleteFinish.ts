@@ -5,14 +5,14 @@ import * as middy from 'middy'
 import { cors, httpErrorHandler } from 'middy/middlewares'
 
 import { getUserId } from '../utils'
-import { deleteTodo } from '../../helpers/todos'
+import { deleteFinish } from '../../helpers/finish'
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const todoId = event.pathParameters.todoId
-    console.log("1234: ", todoId);
+    const finishId = event.pathParameters.finishId
+    console.log("1234: ", finishId);
     const userId = await getUserId(event);
-    await deleteTodo(todoId, userId);
+    await deleteFinish(finishId, userId);
     
     return {
       statusCode: 202,

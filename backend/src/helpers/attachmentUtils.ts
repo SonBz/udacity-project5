@@ -7,8 +7,8 @@ const logger = createLogger('AttachmentUtils')
 const AWSXRay = require('aws-xray-sdk')
 const XAWS = AWSXRay.captureAWS(AWS)
 
-// TODO: Implement the fileStogare logic
-const bucketName = process.env.TODOS_S3_BUCKET;
+// FINISH: Implement the fileStogare logic
+const bucketName = process.env.FINISH_S3_BUCKET;
 const urlExpiration = process.env.SIGNED_URL_EXPIRATION;
 const s3 = new XAWS.S3({signatureVersion: 'v4'});
 
@@ -16,29 +16,29 @@ export class AttachmentUtils{
 
     constructor(
         private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-        private readonly todosTable = process.env.TODOS_TABLE) {
+        private readonly finishTable = process.env.FINISH_TABLE) {
     }
 
-    async createAttachmentPresignedUrl (todoId: string): Promise<string> {
+    async createAttachmentPresignedUrl (finishId: string): Promise<string> {
         return s3.getSignedUrl('putObject', {
         Bucket: bucketName,
-        Key: todoId,
+        Key: finishId,
         Expires: parseInt(urlExpiration)
       });
    }
 
-    async updateTodoAttachmentUrl(todoId: string, attachmentUrl: string, userId: string){
-        logger.info(`updateTodoAttachmentUrl todoId ${todoId} with attachmentUrl ${attachmentUrl}`)
+    async updateFinishAttachmentUrl(finishId: string, attachmentUrl: string, userId: string){
+        logger.info(`updateFinishAttachmentUrl finishId ${finishId} with attachmentUrl ${attachmentUrl}`)
 
         await this.docClient.update({
-            TableName: this.todosTable,
+            TableName: this.finishTable,
             Key: {
-                todoId: todoId,
+                finishId: finishId,
                 userId: userId
             },
             UpdateExpression: "set attachmentUrl = :attachmentUrl",
             ExpressionAttributeValues: {
-                ":attachmentUrl": `https://${bucketName}.s3.amazonaws.com/${todoId}`
+                ":attachmentUrl": `https://${bucketName}.s3.amazonaws.com/${finishId}`
             }
         }).promise();
     }
