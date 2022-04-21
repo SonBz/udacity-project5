@@ -1,8 +1,8 @@
 import { FinishItem } from './../models/FinishItem';
-import { FinishsAccess } from './finishAcess'
-import { AttachmentUtils } from './attachmentUtils';
 import { CreateFinishRequest } from '../requests/CreateFinishRequest'
 import { UpdateFinishRequest } from '../requests/UpdateFinishRequest'
+import { AttachmentUtils } from '../helpers/attachmentUtils';
+import { FinishsAccess } from '../dataLayer/finishAcess';
 
 // FINISH: Implement businessLogic
 const finishAccess = new FinishsAccess();
